@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Review Responder</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f9f5f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 600px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 6px;
+      color: #1a1a1a;
+    }
+
+    p.subtitle {
+      color: #888;
+      font-size: 0.9rem;
+      margin-bottom: 28px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: #444;
+      margin-bottom: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 14px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      resize: vertical;
+      min-height: 120px;
+      outline: none;
+      transition: border 0.2s;
+      font-family: inherit;
+    }
+
+    textarea:focus { border-color: #e05c2a; }
+
+    .stars {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      margin-top: 8px;
+    }
+
+    .stars button {
+      padding: 8px 16px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 8px;
+      background: white;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #666;
+      transition: all 0.15s;
+    }
+
+    .stars button.active {
+      background: #e05c2a;
+      border-color: #e05c2a;
+      color: white;
+    }
+
+    .generate-btn {
+      width: 100%;
+      padding: 14px;
+      background: #e05c2a;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 8px;
+    }
+
+    .generate-btn:hover { background: #c94e20; }
+    .generate-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+    .result {
+      margin-top: 28px;
+      display: none;
+    }
+
+    .result label { margin-bottom: 8px; }
+
+    .result-box {
+      background: #f9f5f0;
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #333;
+      white-space: pre-wrap;
+    }
+
+    .copy-btn {
+      margin-top: 12px;
+      padding: 10px 20px;
+      background: white;
+      border: 1.5px solid #e05c2a;
+      color: #e05c2a;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.15s;
+    }
+
+    .copy-btn:hover {
+      background: #e05c2a;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🌮 Costa Taco Review Responder</h1>
+    <p class="subtitle">Paste a Google review and get a professional response instantly.</p>
+
+    <label>Star Rating</label>
+    <div class="stars">
+      <button onclick="setStars(1)">⭐ 1</button>
+      <button onclick="setStars(2)">⭐ 2</button>
+      <button onclick="setStars(3)">⭐ 3</button>
+      <button onclick="setStars(4)">⭐ 4</button>
+      <button onclick="setStars(5)">⭐ 5</button>
+    </div>
+
+    <label for="review">Customer Review</label>
+    <textarea id="review" placeholder="Paste the review here..."></textarea>
+
+    <button class="generate-btn" onclick="generate()" id="btn">Generate Response</button>
+
+    <div class="result" id="result">
+      <label>Generated Response</label>
+      <div class="result-box" id="output"></div>
+      <button class="copy-btn" onclick="copy()">Copy to Clipboard</button>
+    </div>
+  </div>
+
+  <script>
+    let selectedStars = 5;
+
+    function setStars(n) {
+      selectedStars = n;
+      document.querySelectorAll(".stars button").forEach((btn, i) => {
+        btn.classList.toggle("active", i + 1 === n);
+      });
+    }
+
+    setStars(5);
+
+    async function generate() {
+      const review = document.getElementById("review").value.trim();
+      if (!review) return alert("Please paste a review first.");
+
+      const btn = document.getElementById("btn");
+      btn.disabled = true;
+      btn.textContent = "Generating...";
+
+      const response = await fetch("/api/respond", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ review, stars: selectedStars })
+      });
+
+      const data = await response.json();
+      document.getElementById("output").textContent = data.reply;
+      document.getElementById("result").style.display = "block";
+
+      btn.disabled = false;
+      btn.textContent = "Generate Response";
+    }
+
+    function copy() {
+      const text = document.getElementById("output").textContent;
+      navigator.clipboard.writeText(text);
+      const btn = document.querySelector(".copy-btn");
+      btn.textContent = "Copied!";
+      setTimeout(() => btn.textContent = "Copy to Clipboard", 2000);
+    }
+  </script>
+</body>
+</html>
